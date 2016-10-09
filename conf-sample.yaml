@@ -1,0 +1,20 @@
+# Router config
+router:
+  ip: <router_ip>
+  login: <router_telnet_login>
+  password: <router_telnet_ip>
+
+# Telegram config
+telegtam:
+  password: <password>
+  authenticated_users: [<default_user1_chat_id>, <default_user2_chat_id>]
+  token: <telegram_bot_token>
+
+# NooLite config
+noolite:
+  login: <noolite_login>
+  password: <noolite_password>
+  api_url: <noolite_url>
+  # Min temperature alert
+  temperature_alert: 2
+  internet_connection_counter: 0
