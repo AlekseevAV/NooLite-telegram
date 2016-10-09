@@ -9,7 +9,10 @@ import xml.etree.ElementTree as ET
 
 
 class NooLiteSens:
-    """Информация, полученная с датчиков"""
+    """Класс хранения и обработки информации, полученной с датчиков
+
+    Пока как таковой обработки нет
+    """
     def __init__(self, temperature, humidity, state):
         self.temperature = float(temperature.replace(',', '.')) if temperature != '-' else None
         self.humidity = int(humidity) if humidity != '-' else None
@@ -25,7 +28,11 @@ class NooLiteApi:
         self.request_timeout = request_timeout
 
     def get_sens_data(self):
-        """Получение данных с датчика"""
+        """Получение и прасинг xml данных с датчиков
+
+        :return: список NooLiteSens объектов для каждого датчика
+        :rtype: list
+        """
         response = self._send_request('{}/sens.xml'.format(self.base_api_url))
         sens_states = {
             0: 'Датчик привязан, ожидается обновление информации',
@@ -44,11 +51,23 @@ class NooLiteApi:
         return sens_list
 
     def send_command_to_channel(self, data):
-        """Отправка запроса к NooLite"""
+        """Отправка запроса к NooLite
+
+        Отправляем запрос к NooLite с url параметрами из data
+        :param data: url параметры
+        :type data: dict
+        :return: response
+        """
         return self._send_request('{}/api.htm'.format(self.base_api_url), params=data)
 
     def _send_request(self, url, **kwargs):
-        """Отправка запроса к NooLite и обработка возвращаемого ответа"""
+        """Отправка запроса к NooLite и обработка возвращаемого ответа
+
+        Отправка запроса к url с параметрами из kwargs
+        :param url: url для запроса
+        :type url: str
+        :return: response от NooLite или исключение
+        """
 
         try:
             response = requests.get(url, auth=HTTPBasicAuth(self.login, self.password),

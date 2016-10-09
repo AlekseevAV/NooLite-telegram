@@ -9,7 +9,8 @@ from requests.exceptions import ConnectionError
 from telegram import ReplyKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, Job
 
-from noolite_api import NooLiteApi, NooLiteConnectionTimeout, NooLiteConnectionError, NooLiteBadResponse
+from noolite_api import NooLiteApi, NooLiteConnectionTimeout,\
+    NooLiteConnectionError, NooLiteBadResponse
 
 
 # Получаем конфигруационные данные из файла
@@ -18,7 +19,9 @@ config = yaml.load(open('conf.yaml'))
 # Базовые настройка логирования
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(filename)s:%(lineno)s - %(levelname)s - %(message)s'
+)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
@@ -26,7 +29,11 @@ logger.addHandler(stream_handler)
 
 # Подключаемся к боту и NooLite
 updater = Updater(config['telegtam']['token'])
-noolite_api = NooLiteApi(config['noolite']['login'], config['noolite']['password'], config['noolite']['api_url'])
+noolite_api = NooLiteApi(
+    config['noolite']['login'],
+    config['noolite']['password'],
+    config['noolite']['api_url']
+)
 job_queue = updater.job_queue
 
 
@@ -35,8 +42,10 @@ def auth_required(func):
     @functools.wraps(func)
     def wrapped(bot, update):
         if update.message.chat_id not in config['telegtam']['authenticated_users']:
-            bot.sendMessage(chat_id=update.message.chat_id, text="Вы неавторизованы.\nДля"
-                                                                 " авторизации отправьте /auth password.")
+            bot.sendMessage(
+                chat_id=update.message.chat_id,
+                text="Вы неавторизованы.\nДля авторизации отправьте /auth password."
+            )
         else:
             return func(bot, update)
     return wrapped
@@ -46,7 +55,9 @@ def log(func):
     """Декоратор логирования"""
     @functools.wraps(func)
     def wrapped(bot, update):
-        logger.info('Received message: {}'.format(update.message.text if update.message else update.callback_query.data))
+        logger.info('Received message: {}'.format(
+            update.message.text if update.message else update.callback_query.data)
+        )
         func(bot, update)
         logger.info('Response was sent')
     return wrapped
@@ -54,8 +65,11 @@ def log(func):
 
 def start(bot, update):
     """Команда начала взаимодействия с ботом"""
-    bot.sendMessage(chat_id=update.message.chat_id, text="Для начала работы нужно авторизоваться.\nДля"
-                                                         " авторизации отправьте /auth password.")
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text="Для начала работы нужно авторизоваться.\n"
+             "Для авторизации отправьте /auth password."
+    )
 
 
 def auth(bot, update):
@@ -72,13 +86,20 @@ def auth(bot, update):
             ['/Температура']
         ]
         reply_markup = ReplyKeyboardMarkup(custom_keyboard)
-        bot.sendMessage(chat_id=update.message.chat_id, text="Вы авторизованы.", reply_markup=reply_markup)
+        bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text="Вы авторизованы.",
+            reply_markup=reply_markup
+        )
     else:
         bot.sendMessage(chat_id=update.message.chat_id, text="Неправильный пароль.")
 
 
 def send_command_to_noolite(command):
-    """Обработка запросов в NooLite. Если возращается ошибка, то посылаем пользователю ответ об этом"""
+    """Обработка запросов в NooLite.
+
+    Отправляем запрос. Если возращается ошибка, то посылаем пользователю ответ об этом.
+    """
     try:
         logger.info('Send command to noolite: {}'.format(command))
         response = noolite_api.send_command_to_channel(command)
@@ -144,22 +165,33 @@ def send_temperature(bot, update):
         sens_list = noolite_api.get_sens_data()
     except NooLiteConnectionTimeout as e:
         logger.info(e)
-        bot.sendMessage(chat_id=update.message.chat_id, text="*Дача недоступна!*\n`{}`".format(e),
-                        parse_mode=ParseMode.MARKDOWN)
+        bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text="*Дача недоступна!*\n`{}`".format(e),
+            parse_mode=ParseMode.MARKDOWN
+        )
         return
     except NooLiteBadResponse as e:
         logger.info(e)
-        bot.sendMessage(chat_id=update.message.chat_id, text="*Не удалось получить данные!*\n`{}`".format(e),
-                        parse_mode=ParseMode.MARKDOWN)
+        bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text="*Не удалось получить данные!*\n`{}`".format(e),
+            parse_mode=ParseMode.MARKDOWN
+        )
         return
     except NooLiteConnectionError as e:
         logger.info(e)
-        bot.sendMessage(chat_id=update.message.chat_id, text="*Ошибка подключения к noolite!*\n`{}`".format(e),
-                        parse_mode=ParseMode.MARKDOWN)
+        bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text="*Ошибка подключения к noolite!*\n`{}`".format(e),
+            parse_mode=ParseMode.MARKDOWN
+        )
         return
 
     if sens_list[0].temperature and sens_list[0].humidity:
-        message = "Температура: *{}C*\nВлажность: *{}%*".format(sens_list[0].temperature, sens_list[0].humidity)
+        message = "Температура: *{}C*\nВлажность: *{}%*".format(
+            sens_list[0].temperature, sens_list[0].humidity
+        )
     else:
         message = "Ну удалось получить данные: {}".format(sens_list[0].state)
 
@@ -173,7 +205,10 @@ def send_temperature(bot, update):
 @auth_required
 def send_log(bot, update):
     """Получение лога для отладки"""
-    bot.sendDocument(chat_id=update.message.chat_id, document=open('/var/log/telegram_bot/err.log', 'rb'))
+    bot.sendDocument(
+        chat_id=update.message.chat_id,
+        document=open('/var/log/telegram_bot/err.log', 'rb')
+    )
 
 
 @log
@@ -191,7 +226,8 @@ def power_restore(bot, job):
 def check_temperature(bot, job):
     """Переодическая проверка температуры с датчиков
 
-    Eсли температура ниже, чем установленный минимум - посылаем уведомление зарегистрированным пользователям
+    Eсли температура ниже, чем установленный минимум -
+    посылаем уведомление зарегистрированным пользователям
     """
     try:
         sens_list = noolite_api.get_sens_data()
@@ -204,19 +240,24 @@ def check_temperature(bot, job):
     except NooLiteBadResponse as e:
         print(e)
         return
-    if sens_list[0].temperature and sens_list[0].temperature < config['noolite']['temperature_alert']:
+    if sens_list[0].temperature and \
+                    sens_list[0].temperature < config['noolite']['temperature_alert']:
         for user_chat in config['telegtam']['authenticated_users']:
-            bot.sendMessage(chat_id=user_chat,
-                            text='*Температура ниже {} градусов: {}!*'.format(config['noolite']['temperature_alert'],
-                                                                              sens_list[0].temperature),
-                            parse_mode=ParseMode.MARKDOWN)
+            bot.sendMessage(
+                chat_id=user_chat,
+                parse_mode=ParseMode.MARKDOWN,
+                text='*Температура ниже {} градусов: {}!*'.format(
+                    config['noolite']['temperature_alert'],
+                    sens_list[0].temperature
+                )
+            )
 
 
 def check_internet_connection(bot, job):
     """Переодическая проверка доступа в интернет
 
-    Если доступа в интрнет нет и попытки его проверки исчерпаны - то посылаем по telnet команду роутеру
-    для его перезапуска.
+    Если доступа в интрнет нет и попытки его проверки исчерпаны -
+    то посылаем по telnet команду роутеру для его перезапуска.
     Если доступ в интернет после этого не появился - перезагружаем Raspberry Pi
     """
     try:
